@@ -45,7 +45,7 @@ Each of these folders has its own separate README with more information.
 
 ---
 
-## Multiphysics and Contact Libraries
+## Multiphysics Libraries
 For convenience, a local copy of the Simscape Multibody Multiphysics Library 
 has been included with this submission. If you would like to install the 
 latest version of these libraries, you can find them from the Add-On Explorer, 
