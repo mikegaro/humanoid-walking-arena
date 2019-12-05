@@ -3,7 +3,7 @@
 
 Contains files for reinforcement learning of the walking robot simulation.
 
-Requires MATLAB R2019a or later.
+Requires MATLAB R2019b or later.
 
 ## 2D (6-DOF) MODEL FILES
 This robot has 3 degrees of freedom per leg, and can only move legs along the longitudinal direction.

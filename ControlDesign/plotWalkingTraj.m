@@ -24,9 +24,9 @@ grid on
 
 % Get data logs
 % Footsteps are tracked at the sample time of the stepping
-tStep = logsout.get('stepFwd').Values.Time;
-stepFwd = logsout.get('stepFwd').Values.Data;
-stepLat = logsout.get('stepFwd').Values.Data;
+tStep = get(logsout,'stepFwd').Values.Time;
+stepFwd = get(logsout,'stepFwd').Values.Data;
+stepLat = get(logsout,'stepLat').Values.Data;
 
 % Get the center of mass data and interpolate it to be an integer
 % multiple of the stepping sample time.
@@ -34,15 +34,10 @@ stepLat = logsout.get('stepFwd').Values.Data;
 % per footstep.
 N = 10;
 tTraj = linspace(0,tStep(end),1 + (numel(tStep)-1)*N)';
-X = interp1(logsout.get('sensors').Values.X.Time, ...
-            logsout.get('sensors').Values.X.Data, ...
-            tTraj);
-Y = interp1(logsout.get('sensors').Values.Y.Time, ...
-            logsout.get('sensors').Values.Y.Data, ...
-            tTraj);
-Q = interp1(logsout.get('sensors').Values.Q.Time, ...
-            logsout.get('sensors').Values.Q.Data, ...
-            tTraj);
+measBody = get(logsout,'measBody').Values;
+X = interp1(measBody.X.Time,measBody.X.Data,tTraj);
+Y = interp1(measBody.Y.Time,measBody.Y.Data,tTraj);
+Q = interp1(measBody.Q.Time,measBody.Q.Data,tTraj);
 
 %% Animate
 for idx = 2:numel(stepFwd)

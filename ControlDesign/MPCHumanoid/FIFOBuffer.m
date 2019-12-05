@@ -2,11 +2,10 @@ classdef FIFOBuffer < matlab.System & matlab.system.mixin.Propagates ...
         & matlab.system.mixin.CustomIcon & matlab.system.mixin.SampleTime
     % FIFOBuffer Implements a FIFO Buffer
     %
-    % Copyright 2018 The MathWorks, Inc.
+    % Copyright 2018-2019 The MathWorks, Inc.
 
-
-    % Public, tunable properties
-    properties(Dependent)
+    % Dependent properties
+    properties(Access=private, Dependent)
         NumElements
         Elements
     end
@@ -24,7 +23,7 @@ classdef FIFOBuffer < matlab.System & matlab.system.mixin.Propagates ...
         
     end
     
-    properties(Logical)        
+    properties(Logical, Nontunable)        
         % Fill buffer at startup
         FillBufferAtStartup = false;        
     end

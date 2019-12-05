@@ -8,7 +8,8 @@ clear
 close all
 
 %% Add folders to the path
-addpath(genpath('ModelingSimulation'), ...      % Modeling and simulation files
+addpath(genpath('LIPM'), ...                    % Linear inverted pendulum model (LIPM) files
+        genpath('ModelingSimulation'), ...      % Modeling and simulation files
         genpath('Optimization'), ...            % Optimization files
         genpath('ControlDesign'), ...           % Control design files
         genpath('ReinforcementLearning'), ...   % Reinforcement learning files

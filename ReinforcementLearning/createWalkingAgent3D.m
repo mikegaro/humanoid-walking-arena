@@ -40,5 +40,6 @@ reset(agent); % Clears the experience buffer
 curDir = pwd;
 saveDir = 'savedAgents';
 cd(saveDir)
-save(['trainedAgent_3D_' datestr(now,'mm_DD_YYYY_HHMM')],'agent','trainingResults');
+save(['trainedAgent_3D_' datestr(now,'mm_DD_YYYY_HHMM')],'agent');
+save(['trainingResults_3D_' datestr(now,'mm_DD_YYYY_HHMM')],'trainingResults');
 cd(curDir)

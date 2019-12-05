@@ -2,7 +2,7 @@
 % Copyright 2019 The MathWorks, Inc.
 
 close all
-robotParametersInvKin;
+robotParametersCtrl;
 
 %% Plot the foot trajectory
 gaitPeriod = 1;

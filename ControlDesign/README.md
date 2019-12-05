@@ -3,7 +3,7 @@
 
 These files demonstrate 3D walking control for a bipedal humanoid robot.
 
-Requires MATLAB R2018a or later.
+Requires MATLAB R2019b or later.
 
 ## MAIN FOLDER
 
@@ -33,11 +33,3 @@ inverse kinematics in the longitudinal/sagittal direction. It generates a MATLAB
 
 * `animateFootGait.m` -- Script that animates the walking gait according to the specified parameters, and 
 tests the inverse kinematics calculation above.
-
-* `walkingRobotFootPlace.slx` -- Simulink model showing how to create virtual joints at the foot to directly
-actuate the motion of each foot according to a specified stepping plan.
-
-* `walkingRobotInvKin.slx` -- Simulink model showing how to integrate the inverse kinematics and step planners
-from the previous files. 
-
-* `robotParametersInvKin.m` -- Parameter file loaded automatically with the above example models.

@@ -1,12 +1,10 @@
 % Simulates the walking robot model with the 3 actuator variants and
 % compares results
-% Copyright 2017 The MathWorks, Inc.
+% Copyright 2017-2019 The MathWorks, Inc.
 
 %% Setup
 clc; close all;
-robotParameters
-load optimizedData_21Jul17_0751 % Modify file name
-mdlName = 'walkingRobot';       % Modify model name
+mdlName = 'walkingRobot';
 bdclose(mdlName)
 open_system(mdlName)
 
@@ -21,87 +19,67 @@ actuatorType = 3;
 tic; simout_motor = sim(mdlName,'StopTime','10');
 disp(['Compiled and ran Motor actuated simulation in ' num2str(toc) ' seconds']);
 
-%% Plot
+%% Torso Position Plots
 figure(1)
 subplot(3,1,1)
 hold on
-plot(simout_motion.yout{2}.Values.Time,simout_motion.yout{2}.Values.Data,'b-');
-plot(simout_torque.yout{2}.Values.Time,simout_torque.yout{2}.Values.Data,'r-');
-plot(simout_motor.yout{2}.Values.Time, simout_motor.yout{2}.Values.Data, 'k-');
+plot(get(simout_motion.simout,'measBody').Values.X.Time,get(simout_motion.simout,'measBody').Values.X.Data,'b-');
+plot(get(simout_torque.simout,'measBody').Values.X.Time,get(simout_torque.simout,'measBody').Values.X.Data,'r-');
+plot(get(simout_motor.simout,'measBody').Values.X.Time, get(simout_motor.simout,'measBody').Values.X.Data, 'k-');
 title('Robot Motion')
 legend('Motion','Torque','Motor');
 title('Simulation Output Comparisons');
 xlabel('Time [s]');
-ylabel('Distance traveled [m]');
+ylabel('Torso X Position [m]');
 subplot(3,1,2)
 hold on
-plot(simout_motion.yout{1}.Values.Time,simout_motion.yout{1}.Values.Data,'b-');
-plot(simout_torque.yout{1}.Values.Time,simout_torque.yout{1}.Values.Data,'r-');
-plot(simout_motor.yout{1}.Values.Time, simout_motor.yout{1}.Values.Data, 'k-');
+plot(get(simout_motion.simout,'measBody').Values.Y.Time,get(simout_motion.simout,'measBody').Values.Y.Data,'b-');
+plot(get(simout_torque.simout,'measBody').Values.Y.Time,get(simout_torque.simout,'measBody').Values.Y.Data,'r-');
+plot(get(simout_motor.simout,'measBody').Values.Y.Time, get(simout_motor.simout,'measBody').Values.Y.Data, 'k-');
+title('Robot Motion')
 legend('Motion','Torque','Motor');
 xlabel('Time [s]');
-ylabel('Angular Velocity [rad/s]');
+ylabel('Torso Y Position [m]');
 subplot(3,1,3)
 hold on
-plot(simout_motion.yout{3}.Values.Time,simout_motion.yout{3}.Values.Data,'b-');
-plot(simout_torque.yout{3}.Values.Time,simout_torque.yout{3}.Values.Data,'r-');
-plot(simout_motor.yout{3}.Values.Time, simout_motor.yout{3}.Values.Data, 'k-');
+plot(get(simout_motion.simout,'measBody').Values.Z.Time,get(simout_motion.simout,'measBody').Values.Z.Data,'b-');
+plot(get(simout_torque.simout,'measBody').Values.Z.Time,get(simout_torque.simout,'measBody').Values.Z.Data,'r-');
+plot(get(simout_motor.simout,'measBody').Values.Z.Time, get(simout_motor.simout,'measBody').Values.Z.Data, 'k-');
+title('Robot Motion')
 legend('Motion','Torque','Motor');
 xlabel('Time [s]');
-ylabel('Torso Height [cm]');
+ylabel('Torso Z Position [m]');
 
-figure(2)
-subplot(3,1,1)
-hold on
-plot(simout_motion.yout{4}.Values.ankle_torque.Time,simout_motion.yout{4}.Values.ankle_torque.Data,'b-');
-plot(simout_torque.yout{4}.Values.ankle_torque.Time,simout_torque.yout{4}.Values.ankle_torque.Data,'r-');
-plot(simout_motor.yout{4}.Values.ankle_torque.Time, simout_motor.yout{4}.Values.ankle_torque.Data, 'k-');
-title('Joint Torques')
-legend('Motion','Torque','Motor');xlabel('Time [s]');
-ylabel('Right Leg Ankle Torque [N*m]');
-subplot(3,1,2)
-hold on
-plot(simout_motion.yout{4}.Values.knee_torque.Time,simout_motion.yout{4}.Values.knee_torque.Data,'b-');
-plot(simout_torque.yout{4}.Values.knee_torque.Time,simout_torque.yout{4}.Values.knee_torque.Data,'r-');
-plot(simout_motor.yout{4}.Values.knee_torque.Time, simout_motor.yout{4}.Values.knee_torque.Data, 'k-');
-legend('Motion','Torque','Motor');
-xlabel('Time [s]');
-ylabel('Right Leg Knee Torque [N*m]');
-subplot(3,1,3)
-hold on
-plot(simout_motion.yout{4}.Values.hip_torque.Time,simout_motion.yout{4}.Values.hip_torque.Data,'b-');
-plot(simout_torque.yout{4}.Values.hip_torque.Time,simout_torque.yout{4}.Values.hip_torque.Data,'r-');
-plot(simout_motor.yout{4}.Values.hip_torque.Time, simout_motor.yout{4}.Values.hip_torque.Data, 'k-');
-legend('Motion','Torque','Motor');
-xlabel('Time [s]');
-ylabel('Right Leg Hip Torque [N*m]');
-
-figure(3)
-subplot(3,1,1)
-hold on
-plot(simout_motion.yout{4}.Values.ankle_angle.Time,simout_motion.yout{4}.Values.ankle_angle.Data,'b-');
-plot(simout_torque.yout{4}.Values.ankle_angle.Time,simout_torque.yout{4}.Values.ankle_angle.Data,'r-');
-plot(simout_motor.yout{4}.Values.ankle_angle.Time, simout_motor.yout{4}.Values.ankle_angle.Data, 'k-');
-title('Joint Angles')
-legend('Motion','Torque','Motor');
-xlabel('Time [s]');
-ylabel('Right Leg Ankle Angle [rad]');
-subplot(3,1,2)
-hold on
-plot(simout_motion.yout{4}.Values.knee_angle.Time,simout_motion.yout{4}.Values.knee_angle.Data,'b-');
-plot(simout_torque.yout{4}.Values.knee_angle.Time,simout_torque.yout{4}.Values.knee_angle.Data,'r-');
-plot(simout_motor.yout{4}.Values.knee_angle.Time, simout_motor.yout{4}.Values.knee_angle.Data, 'k-');
-legend('Motion','Torque','Motor');
-xlabel('Time [s]');
-ylabel('Right Leg Knee Angle [rad]');
-subplot(3,1,3)
-hold on
-plot(simout_motion.yout{4}.Values.hip_angle.Time,simout_motion.yout{4}.Values.hip_angle.Data,'b-');
-plot(simout_torque.yout{4}.Values.hip_angle.Time,simout_torque.yout{4}.Values.hip_angle.Data,'r-');
-plot(simout_motor.yout{4}.Values.hip_angle.Time, simout_motor.yout{4}.Values.hip_angle.Data, 'k-');
-legend('Motion','Torque','Motor');
-xlabel('Time [s]');
-ylabel('Right Leg Hip Angle [rad]');
+%% Joint Plots
+jointNames = {'ankleroll','anklepitch','knee','hippitch','hiproll','hipyaw'};
+for idx = 1:6
+    figure(idx+1)
+    jName = jointNames{idx};
+    
+    % Joint angle
+    subplot(2,1,1)
+    hold on
+    modifier = [jName '_angle'];
+    plot(get(simout_motion.simout,'measR').Values.(modifier).Time,get(simout_motion.simout,'measR').Values.(modifier).Data,'b-');
+    plot(get(simout_torque.simout,'measR').Values.(modifier).Time,get(simout_torque.simout,'measR').Values.(modifier).Data,'r-');
+    plot(get(simout_motor.simout,'measR').Values.(modifier).Time, get(simout_motor.simout,'measR').Values.(modifier).Data, 'k-');
+    legend('Motion','Torque','Motor');
+    xlabel('Time [s]');
+    ylabel('Joint Angle [rad]');
+    title(jointNames{idx})
+        
+    % Joint torque
+    subplot(2,1,2)
+    hold on
+    modifier = [jName '_torque'];
+    plot(get(simout_motion.simout,'measR').Values.(modifier).Time,get(simout_motion.simout,'measR').Values.(modifier).Data,'b-');
+    plot(get(simout_torque.simout,'measR').Values.(modifier).Time,get(simout_torque.simout,'measR').Values.(modifier).Data,'r-');
+    plot(get(simout_motor.simout,'measR').Values.(modifier).Time, get(simout_motor.simout,'measR').Values.(modifier).Data, 'k-');
+    legend('Motion','Torque','Motor');
+    xlabel('Time [s]');
+    ylabel('Joint Torque [N*m]');
+    ylim(max_torque*[-1, 1])
+end
 
 
 %% Cleanup
