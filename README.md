@@ -5,8 +5,7 @@ Copyright 2017-2019 The MathWorks, Inc.
 This repository contains example files for the following [MATLAB and Simulink Robotics Arena](https://www.mathworks.com/academia/student-competitions/roboticsarena.html) videos on walking robots.
 
 * [Basics of walking robots](https://www.mathworks.com/videos/model-based-control-of-humanoid-walking-1574399243682.html)
-* [Modeling and simulation](https://www.mathworks.com/videos/matlab-and-simulink-robotics-arena-walking-robots-part-1-modeling-and-simulation-1505941655157.html)
-* [Actuation and control](https://www.mathworks.com/videos/matlab-and-simulink-robotics-arena-walking-robots-part-2-actuation-and-control-1506374631721.html)
+* [Modeling and simulation](https://www.mathworks.com/videos/modeling-and-simulation-of-walking-robots-1576560207573.html)
 * [Trajectory optimization](https://www.mathworks.com/videos/matlab-and-simulink-robotics-arena-walking-robots-part-3-trajectory-optimization-1506440520726.html)
 * [Walking pattern generation](https://www.mathworks.com/videos/matlab-and-simulink-robotics-arena-walking-robots-pattern-generation-1546434170253.html)
 * [Deep reinforcement learning](https://www.mathworks.com/videos/matlab-and-simulink-robotics-arena-deep-reinforcement-learning-for-walking-robots--1551449152203.html)
