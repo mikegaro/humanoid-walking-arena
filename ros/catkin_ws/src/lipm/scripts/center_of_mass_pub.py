@@ -1,13 +1,57 @@
 #!/usr/bin/env python
-  
 import rospy
 from std_msgs.msg import Int16
-  
-  
-def publisher():
+import numpy as np
+from scipy import signal
+
+xTorso  = 0.12
+g       = 9.81
+z_c     = 0.68
+
+stepHeight = 0.2
+stepLength = 0.2
+dy_mid = 0.06
+
+class LIPMStateSpaceModel():
+    a = np.array([
+                 [0,    1,  0,  0],
+                 [g/z_c,0,  0,  0],
+                 [0,    0,  0,  1],
+                 [0,    0,g/z_c,0]
+                 ])
+
+    b = np.array([
+                  [0,0],
+                  [1,0],
+                  [0,0],
+                  [0,1]
+                 ])
+    
+    c = np.array([
+                  [1,0,0,0],
+                  [0,0,1,0],
+                 ])
+
+    d = np.array([
+                  [0,0],
+                  [0,0]
+                 ])
+    sys = signal.StateSpace(a, b, c ,d)
+    disc_sys = sys.to_discrete(0.01)
+
+
+def main():
+
     pub = rospy.Publisher('/limp_trajectory', Int16, queue_size=10)
     rospy.init_node('limp', anonymous=True)
     rate = rospy.Rate(2)
+
+    [dx0, y0, dy0, singleSupportTime] = findInitialConditions(stepLength, dy_mid, xTorso, zModel, g)
+
+    #Initial conditions vector that guarantees symetric trajectories in LIPM
+    state0 = [x0, dx0, y0, dy0]
+    u0 = [0, 0]
+
     while not rospy.is_shutdown():
         data = 6
         rospy.loginfo(data)
@@ -17,11 +61,11 @@ def publisher():
   
 if __name__ == '__main__':
     try:
-        publisher()
+        main()
     except rospy.ROSInterruptException:
         pass
 
-def findInitialConditions(stepLength, dy_mid, x0, zModel, g, Ts):
+def findInitialConditions(stepLength, dy_mid, x0, zModel, g):
     
     #Desired midstance and state
     y_mid = 0
@@ -44,4 +88,6 @@ def findInitialConditions(stepLength, dy_mid, x0, zModel, g, Ts):
 
     dx0 = -x0/sqrt(zModel/g) * sinh(tf/sqrt(zModel/g)) / cosh(tf/sqrt(zModel/g))
 
-    pass
+    return [dx0 y0, dy0, singleSupportTime]
+
+    
