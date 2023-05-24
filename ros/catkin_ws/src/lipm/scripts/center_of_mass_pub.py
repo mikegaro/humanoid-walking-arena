@@ -7,10 +7,14 @@ from scipy import signal
 xTorso  = 0.12
 g       = 9.81
 z_c     = 0.68
+z_robot = 0.75
 
 stepHeight = 0.2
 stepLength = 0.2
 dy_mid = 0.06
+
+# Tiempo de muestreo
+Ts = 0.01
 
 class LIPMStateSpaceModel():
     a = np.array([
@@ -52,6 +56,28 @@ def main():
     state0 = [x0, dx0, y0, dy0]
     u0 = [0, 0]
 
+    robotpos0 = [0, 0, z_robot]
+
+    bodyposVector = np.array([])
+
+    footposVector = np.array([])
+
+    timeVector = np.array([])
+
+    #First, lower the body of the robot and move its COM to the right foot
+    #This is a harcoded value that can be modify later 
+    move_to_starting_Points = [[0,0.67*x0],
+                     [0,0],
+                     [z_robot, z_c]];
+
+    timepoints = [0,1]
+    
+    for i in np.arange(timepoints[0],timepoints[1], Ts):
+        timeVector.append(i)
+
+    q, qd = 
+    
+
     while not rospy.is_shutdown():
         data = 6
         rospy.loginfo(data)
@@ -88,6 +114,6 @@ def findInitialConditions(stepLength, dy_mid, x0, zModel, g):
 
     dx0 = -x0/sqrt(zModel/g) * sinh(tf/sqrt(zModel/g)) / cosh(tf/sqrt(zModel/g))
 
-    return [dx0 y0, dy0, singleSupportTime]
+    return [dx0, y0, dy0, singleSupportTime]
 
     
