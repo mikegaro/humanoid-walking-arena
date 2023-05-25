@@ -16,7 +16,7 @@ dy_mid = 0.06
 # Tiempo de muestreo
 Ts = 0.01
 
-class LIPMStateSpaceModel():
+class LIPM_Model():
     a = np.array([
                  [0,    1,  0,  0],
                  [g/z_c,0,  0,  0],
@@ -98,7 +98,7 @@ def main():
     bodyposVector = np.delete(bodyposVector, 0, axis=0)
 
 
-    ax = plt.figure().add_subplot(projection='3d')
+    #ax = plt.figure().add_subplot(projection='3d')
     #plt.plot(bodyposVector[:,0], bodyposVector[:,1], bodyposVector[:,2], "o")
     #plt.show()
 
@@ -131,10 +131,47 @@ def main():
     timeVector = np.array([])
     timeVector = np.arange(timepoints[0],timepoints[1], Ts)
 
-    #Ahi va quedando
+    
+# use bc_type = 'natural' adds the constraints as we described above
+    #Ahi va quedando 
 
     print(timeVector.size)
     print(footposVector)
+
+    tInitial = timeVector[-1]
+    tFinal = tInitial + singleSupportTime
+    print(tFinal-tInitial)
+    steptimeVector = np.arange(tInitial, tFinal, Ts)
+
+    #Simulation loop
+    nSteps = len(steptimeVector)
+    states = np.array([[0,0,0,0]])
+    states = np.concatenate((states, [state0]),axis=0)
+    states = np.delete(states,0,axis=0)
+
+    dx_next = states[0][1] + Ts*((states[0][0] - footposVector[0][2])*g/z_c)
+    x_next = states[0][0] + Ts*dx_next
+    dy_next = states[0][3] + Ts*((states[0][2] - footposVector[1][2])*g/z_c)
+    y_next = states[0][2] + Ts*dy_next
+
+    states = np.concatenate((states, [[x_next, dx_next, y_next, dy_next]]), axis=0)
+    print(state0)
+
+    for i in range(1, nSteps-1):
+        dx_next = states[i][1] + Ts*((states[i][0] - footposVector[0][1])*g/z_c)
+        x_next = states[i][0] + Ts*dx_next
+        dy_next = states[i][3] + Ts*((states[i][2] - footposVector[1][1])*g/z_c)
+        y_next = states[i][2] + Ts*dy_next
+        states = np.concatenate((states, [[x_next, dx_next, y_next, dy_next]]), axis=0)
+    np.set_printoptions(formatter={'float': lambda x: "{0:0.3f}".format(x)})
+    print(states[1:30])
+
+    ax = plt.figure().add_subplot(projection='3d')
+    ax.plot(states[:30,0], states[:30,2], label='parametric curve')
+    ax.legend()
+
+    plt.show()  
+    # print(states)
 
 def findInitialConditions(stepLength, dy_mid, x0, zModel, g):
     
@@ -160,5 +197,18 @@ def findInitialConditions(stepLength, dy_mid, x0, zModel, g):
     dx0 = -x0/math.sqrt(zModel/g) * math.sinh(tf/math.sqrt(zModel/g)) / math.cosh(tf/math.sqrt(zModel/g))
 
     return [dx0, y0, dy0, tsinglesupport]
+
+def simulateSingleStep(fhold_x, fhold_y, state0, u0, timeVector, com_vector, robot_vector, tsinglesupport):
+    
+    #Define time vector
+    tInitial = timeVector[-1]
+    tFinal = tInitial + tsinglesupport
+    steptimeVector = np.arange(tInitial, tFinal, Ts)
+
+    #Simulation loop
+    nSteps = len(steptimeVector)
+    states = np.array([[]])
+
+    print(states)
 
 main()
