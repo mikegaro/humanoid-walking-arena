@@ -4,211 +4,177 @@ import matplotlib.pyplot as plt
 from mpl_toolkits.mplot3d import Axes3D
 import math
 
-xTorso  = 0.12
-g       = 9.81
-z_c     = 0.68
-z_robot = 0.75
+G = 9.81 # [m/s^2]
 
-stepHeight = 0.2
-stepLength = 0.2
-dy_mid = 0.06
+X_BODY_TO_FEET  = 0.12 # [m]
+Z_ROBOT_WALK    = 0.68 # m
+Z_ROBOT_STATIC= 0.75 # m
+
+# stepHeight = 0.2
+STEP_LENGTH = 0.2 # [m]
+ROBOT_VEL_Y = 0.1 # [m]
 
 # Tiempo de muestreo
-Ts = 0.01
-
-class LIPM_Model():
-    a = np.array([
-                 [0,    1,  0,  0],
-                 [g/z_c,0,  0,  0],
-                 [0,    0,  0,  1],
-                 [0,    0,g/z_c,0]
-                 ])
-
-    b = np.array([
-                  [0,0],
-                  [1,0],
-                  [0,0],
-                  [0,1]
-                 ])
-    
-    c = np.array([
-                  [1,0,0,0],
-                  [0,0,1,0],
-                 ])
-
-    d = np.array([
-                  [0,0],
-                  [0,0]
-                 ])
-    sys = signal.StateSpace(a, b, c, d, dt=Ts)
+SAMPLE_TIME = 0.0001 # [s]
 
 def main():
 
-    x0 = xTorso
-
-    [dx0, y0, dy0, singleSupportTime] = findInitialConditions(stepLength, dy_mid, x0, z_c, g)
+    x_0 = X_BODY_TO_FEET
+    [dx0, y_0, dy0, single_support_time] = findInitialConditions(STEP_LENGTH,
+                                                                 ROBOT_VEL_Y,
+                                                                 x_0,
+                                                                 Z_ROBOT_WALK,
+                                                                 G)
 
     #Initial conditions vector that guarantees symetric trajectories in LIPM
-    state0 = [x0, dx0, y0, dy0]
-    u0 = [0, 0]
+    state0 = [x_0, dx0, y_0, dy0]
+    body_position = np.array([[0,0,0]])
+    time_vector = np.array([])# [m]
 
-    robotpos0 = [0, 0, z_robot]
+    #################################################################
+    ## PART 1: GO TO START POSE
+    #################################################################
+    #First, lower the body of the robot and move its COM to the right foot
+    #This is a harcoded value that can be modify later
 
-    bodyposVector = np.array([[0,0,0]])
+    starting_body_points = np.array([
+                     [0,0.67*X_BODY_TO_FEET],
+                     [0,0],
+                     [Z_ROBOT_STATIC, Z_ROBOT_WALK]])
 
+    timepoints = [0,1]
+
+    time_vector = np.linspace(timepoints[0],timepoints[1], math.floor(1/SAMPLE_TIME))
+
+    m_x = (starting_body_points[0][1] - starting_body_points[0][0])/(timepoints[1]-timepoints[0])
+    m_z = (starting_body_points[2][1] - starting_body_points[2][0])/(timepoints[1]-timepoints[0])
+
+    q_x = interpolate.interp1d(time_vector, time_vector*m_x*SAMPLE_TIME, fill_value="extrapolate")
+    q_y = 0
+    q_z = interpolate.interp1d(time_vector, 
+                               starting_body_points[2][0] + time_vector*m_z*SAMPLE_TIME,
+                               fill_value="extrapolate")
+
+    for i in np.arange(0,len(time_vector)):
+        aux = np.array([[q_x(i), q_y, q_z(i)]])
+        body_position = np.concatenate((body_position,aux), axis=0)
+    body_position = np.delete(body_position, 0, axis=0)
+
+    #################################################################
+    ## PART 2: MAKE A HALF STEP
+    #################################################################
     # Store left and right foothold position (left:odd, right:even)
-    footposVector = np.array([
-                            [-xTorso, xTorso],
+
+    final_halfstep_position = np.array([[0],[0.1],[Z_ROBOT_WALK]])
+    starting_body_points = np.concatenate((starting_body_points, final_halfstep_position), axis=1)
+
+    m_x = (starting_body_points[0][2] - starting_body_points[0][1])/(timepoints[1]-timepoints[0])
+    m_y = (starting_body_points[1][2] - starting_body_points[1][1])/(timepoints[1]-timepoints[0])
+
+    q_x = interpolate.interp1d( time_vector, 
+                                starting_body_points[0][1] + time_vector*m_x*SAMPLE_TIME,
+                                fill_value="extrapolate")
+    q_z = Z_ROBOT_WALK
+    q_y = interpolate.interp1d(time_vector, 
+                               starting_body_points[1][1] + time_vector*m_y*SAMPLE_TIME,
+                               fill_value="extrapolate")
+
+    for i in np.arange(0,len(time_vector)):
+        aux = np.array([[q_x(i), q_y(i), q_z]])
+        body_position = np.concatenate((body_position,aux), axis=0)
+    body_position = np.delete(body_position, 0, axis=0)
+
+    foot_position = np.array([
+                            [-X_BODY_TO_FEET, X_BODY_TO_FEET],
                             [0,0],
                             [0,0]
                             ])
 
-    timeVector = np.array([])
+    #################################################################
+    ## PART 3: MAKE CONSECUTIVE STEPS
+    #################################################################
 
-    #First, lower the body of the robot and move its COM to the right foot
-    #This is a harcoded value that can be modify later 
-    startingPoints = np.array([[0,0.67*xTorso],
-                     [0,0],
-                     [z_robot, z_c]]);
+    footHold_x0 = -0.12
+    footHold_y0 = 0.2
 
-    timepoints = [0,1]
-    
-    timeVector = np.arange(timepoints[0],timepoints[1], Ts)
-
-   # [print(i) for i in timeVector]
-
-    print("Size of timeVector is ", timeVector.size)
+    foot_position = np.concatenate((foot_position, [[footHold_x0],[footHold_y0],[0]]), axis=1)
 
 
-    m_x = (startingPoints[0][1] - startingPoints[0][0])/(timepoints[1]-timepoints[0])
-    print(m_x)
-    m_z = (startingPoints[2][1] - startingPoints[2][0])/(timepoints[1]-timepoints[0])
-    print(m_z)
-    q_x = interpolate.interp1d(timeVector, timeVector*m_x/100, fill_value="extrapolate")
-    q_y = 0
-    q_z = interpolate.interp1d(timeVector, startingPoints[2][0] + timeVector*m_z/100, fill_value="extrapolate")
 
-    p_z = startingPoints[2][0] + timeVector*m_z
+    state0 = [0.12, dx0, -0.1, dy0]
 
-    for i in np.arange(0,len(timeVector)):
-        aux = np.array([[q_x(i), q_y, q_z(i)]])
-    #    print(bodyposVector[i])
-        bodyposVector = np.concatenate((bodyposVector,aux), axis=0)
-        
-    bodyposVector = np.delete(bodyposVector, 0, axis=0)
+    for i in range(1,4):
+        tInitial = time_vector[-1]
+        tFinal = tInitial + single_support_time
+        steptimeVector = np.linspace(tInitial, tFinal, math.floor((tFinal-tInitial)/SAMPLE_TIME))
 
+        #Simulation loop
+        nSteps = len(steptimeVector)
+        states = np.array([state0])
 
-    #ax = plt.figure().add_subplot(projection='3d')
-    #plt.plot(bodyposVector[:,0], bodyposVector[:,1], bodyposVector[:,2], "o")
-    #plt.show()
+        for i in range(0, nSteps-1):
+            dx_next = states[i][1] + SAMPLE_TIME*((states[i][0])*G/Z_ROBOT_WALK)
+            x_next = states[i][0] + SAMPLE_TIME*states[i][1]
+            dy_next = states[i][3] + SAMPLE_TIME*((states[i][2])*G/Z_ROBOT_WALK)
+            y_next = states[i][2] + SAMPLE_TIME*states[i][3]
+            states = np.concatenate((states, [[x_next, dx_next, y_next, dy_next]]), axis=0)
 
-    ## PART2: MAKE A HALF STEP
+        aux = zip(np.add(states[:,0],footHold_x0), np.add(states[:,2],footHold_y0), [Z_ROBOT_WALK for i in states])
+        body_position = np.concatenate((body_position,[list(i) for i in list(aux)]), axis=0)
 
-    starting_halfstep = np.array([[0],[0.1],[z_c]])
+        [state0, footHold_x0, footHold_y0] = changeLeg(states[-1], body_position)
 
-    startingPoints = np.concatenate((startingPoints, starting_halfstep), axis=1)
-
-    y_off = startingPoints[1][2]
-    print(y_off)
-
-    #Initial walking position
-    fhold_x = -x0
-    fhold_y = -y0 + y_off
-    print("fhold_x: ", fhold_x)
-    print("fhold_y: ", fhold_y)
-
-    footposVector = np.concatenate((footposVector, [[fhold_x],[fhold_y],[0]]), axis=1) #left
-
-    readyPos1 = startingPoints[:,1]
-    readyPos2 = startingPoints[:,2]
-    print(readyPos1)
-    print(readyPos2)
-    readyVel1 = np.array([0,0,0])
-    readyVel2 = np.array([dx0, dy0, 0])
-
-    timepoints = [1, 1.5] #HARDCODING 0.5 SECONDS TO TAKE A HALF STEP
-
-    timeVector = np.array([])
-    timeVector = np.arange(timepoints[0],timepoints[1], Ts)
-
-    
-# use bc_type = 'natural' adds the constraints as we described above
-    #Ahi va quedando 
-
-    print(timeVector.size)
-    print(footposVector)
-
-    tInitial = timeVector[-1]
-    tFinal = tInitial + singleSupportTime
-    print(tFinal-tInitial)
-    steptimeVector = np.arange(tInitial, tFinal, Ts)
-
-    #Simulation loop
-    nSteps = len(steptimeVector)
-    states = np.array([[0,0,0,0]])
-    states = np.concatenate((states, [state0]),axis=0)
-    states = np.delete(states,0,axis=0)
-
-    dx_next = states[0][1] + Ts*((states[0][0] - footposVector[0][2])*g/z_c)
-    x_next = states[0][0] + Ts*dx_next
-    dy_next = states[0][3] + Ts*((states[0][2] - footposVector[1][2])*g/z_c)
-    y_next = states[0][2] + Ts*dy_next
-
-    states = np.concatenate((states, [[x_next, dx_next, y_next, dy_next]]), axis=0)
-    print(state0)
-
-    for i in range(1, nSteps-1):
-        dx_next = states[i][1] + Ts*((states[i][0] - footposVector[0][1])*g/z_c)
-        x_next = states[i][0] + Ts*dx_next
-        dy_next = states[i][3] + Ts*((states[i][2] - footposVector[1][1])*g/z_c)
-        y_next = states[i][2] + Ts*dy_next
-        states = np.concatenate((states, [[x_next, dx_next, y_next, dy_next]]), axis=0)
-    np.set_printoptions(formatter={'float': lambda x: "{0:0.3f}".format(x)})
-    print(states[1:30])
+        foot_position = np.concatenate((foot_position, [[footHold_x0],[footHold_y0],[0]]), axis=1)
 
     ax = plt.figure().add_subplot(projection='3d')
-    ax.plot(states[:30,0], states[:30,2], label='parametric curve')
-    ax.legend()
+    ax.plot(body_position[:,0],body_position[:,1],body_position[:,2], "o")
+    ax.plot(foot_position[0,:],foot_position[1,:], foot_position[2,:], "o")
+    plt.show()
 
-    plt.show()  
-    # print(states)
-
-def findInitialConditions(stepLength, dy_mid, x0, zModel, g):
-    
+def findInitialConditions(STEP_LENGTH, ROBOT_VEL_Y, x_0, zModel, G):
     #Desired midstance and state
+    s = math.sqrt(zModel/G)
     y_mid = 0
-    
+    # using relationship between final body state and initial body state,
+    # we can find time it will take to re
     #Corresponding orbital energy is
-    E = -g/(2*zModel) * y_mid**2 + 0.5*dy_mid**2
-
-    y0 = -stepLength/2
-
+    E = -G/(2*zModel) * (y_mid**2) + 0.5*(ROBOT_VEL_Y**2)
+    y_0 = -STEP_LENGTH/2
     #Finding dy0 from midstance energy level
-    dy0 = math.sqrt(2*(E + g/(2*zModel) * y0**2))
-
+    # using relationship between final body state and initial body state,
+    # we can find time it will take to re
+    dy0 = math.sqrt(2*(E + G/(2*zModel) * (y_0**2)))
     # using relationship between final body state and initial body state,
     # we can find time it will take to reach midstance given final velocity
-    # (dy = dy_mid) and final position (which is y = 0 at midstance)
+    # (dy = ROBOT_VEL_Y) and final position (which is y = 0 at midstance)
+    tsinglesupport = 2*math.asinh( STEP_LENGTH/2/(s*ROBOT_VEL_Y) ) * s
+    print("singlesupportTIme is ", tsinglesupport)
 
-    tsinglesupport = 2*math.asinh( stepLength / (2*math.sqrt(zModel/g)*dy_mid) ) * math.sqrt(zModel/g)
-    
     tf = tsinglesupport/2
 
-    dx0 = -x0/math.sqrt(zModel/g) * math.sinh(tf/math.sqrt(zModel/g)) / math.cosh(tf/math.sqrt(zModel/g))
+    dx0 = -x_0/s * math.sinh(tf/s) / math.cosh(tf/s)
 
-    return [dx0, y0, dy0, tsinglesupport]
+    return [dx0, y_0, dy0, tsinglesupport]
 
-def simulateSingleStep(fhold_x, fhold_y, state0, u0, timeVector, com_vector, robot_vector, tsinglesupport):
+def changeLeg(finalState, body_position):
     
-    #Define time vector
-    tInitial = timeVector[-1]
-    tFinal = tInitial + tsinglesupport
-    steptimeVector = np.arange(tInitial, tFinal, Ts)
+    xf  =   finalState[0]
+    dxf =   finalState[1]
+    yf  =   finalState[2]
+    dyf =   finalState[3]
 
-    #Simulation loop
-    nSteps = len(steptimeVector)
-    states = np.array([[]])
+    #Use simple control law (mirroring)
+    x_0  = -xf
 
-    print(states)
+    y_0  = -yf 
+    dx0 = dxf
+    dy0 = dyf
+
+    newInitialState = [x_0, dx0, y_0, dy0]
+
+    newFoothold_x = body_position[-1,0] - x_0
+    newFoothold_y = body_position[-1,1] - y_0
+
+    return [newInitialState, newFoothold_x, newFoothold_y]
 
 main()
